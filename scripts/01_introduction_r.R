@@ -4,6 +4,8 @@
 # Packages ----
 
 library(dplyr)
+library(writexl)
+library(ggplot2)
 
 # Importer les donnees ----
 
@@ -106,3 +108,61 @@ dataScoresNum <- select(dataScores, where(is.numeric))
 apply(dataScoresNum, MARGIN = 2, mean)
 
 # 2.14 Calculs automatises sur chaque colonne ----
+
+# Etape 1 : creer un regroupement autour d'une variable groupe
+groupOrigine <- group_by(dataScores, Origine)
+
+# Etape 2 : calculer la moyenne de Score1 par Origine
+summarise(groupOrigine, moyS1 = mean(Score1))
+
+# Il est possible d'enchainer plusieurs calculs groupes
+# dans la fonction summarise()
+summarise(groupOrigine, 
+          moyS1 = mean(Score1),
+          moyS2 = mean(Score2))
+
+# Executer un calcul groupe sur chaque colonne d'un data frame
+summarise(groupOrigine, across(where(is.numeric), ~mean(.x)))
+
+# Calcul de moyenne par etablissement et origine
+groupEtabOrigine <- group_by(dataScores, Etablissement, Origine)
+
+ResultatMoyenes <- summarise(groupEtabOrigine, 
+          moyS1 = mean(Score1),
+          moyS2 = mean(Score2))
+
+# Exporter un data frame au format Excel
+write_xlsx(ResultatMoyenes, "data/Resultats_moyennes.xlsx")
+
+# 2.15 Graphiques avec ggplot2 ----
+
+# Construction d'une base graphique
+ggplot(data = dataScores,
+       mapping = aes(x = Score1, y = Score5,
+                     color = Origine))
+
+# Ajout d'un premier calque a la base graphique
+ggplot(data = dataScores,
+       mapping = aes(x = Score1, y = Score5,
+                     color = Origine)) +
+  geom_point()
+
+# Enchainement de calques - exemple 1
+ggplot(data = dataScores,
+       mapping = aes(x = Score1, y = Score5,
+                     color = Origine)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(title = "Test de la fonction ggplot()",
+       x = "Score obtenu a l'examen 1",
+       y = "Score obtenu a l'examen 5") +
+  theme_bw()
+
+# Enchainement de calques - exemple 2
+ggplot(data = dataScores,
+       mapping = aes(x = Score1, y = Score5,
+                     color = Origine)) +
+  geom_point() +
+  facet_wrap(~Etablissement) +
+  scale_color_manual(values = c("red", "darkgreen", "#00008B"))
+  theme_bw()
